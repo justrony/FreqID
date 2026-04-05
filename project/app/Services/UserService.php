@@ -3,33 +3,54 @@
 namespace App\Services;
 
 use App\Models\User;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Log;
-use Exception;
 
 class UserService
 {
-    public function createUser(array $data)
+    private string $defaultPassword = '12345678';
+
+    public function getAll(): Collection
     {
-        DB::beginTransaction();
+        return User::withTrashed()->get();
+    }
 
-        try {
-            $defaultPassword = "12345678";
-
-            $user = User::create(array_merge($data, [
-                'password' => Hash::make($defaultPassword),
+    public function store(array $validated): User
+    {
+        return DB::transaction(function () use ($validated) {
+            return User::create(array_merge($validated, [
+                'password' => Hash::make($this->defaultPassword),
             ]));
+        });
+    }
 
-            DB::commit();
+    public function update(User $user, array $validated, bool $resetPassword = false): User
+    {
+        return DB::transaction(function () use ($user, $validated, $resetPassword) {
+            $data = $resetPassword
+                ? array_merge($validated, ['password' => Hash::make($this->defaultPassword)])
+                : $validated;
+
+            $user->update($data);
 
             return $user;
+        });
+    }
 
-        } catch (Exception $exception) {
-            DB::rollBack();
-            Log::error('Erro ao criar usuário: ' . $exception->getMessage());
+    public function restore(int $id): User
+    {
+        return DB::transaction(function () use ($id) {
+            $user = User::withTrashed()->findOrFail($id);
+            $user->restore();
+            return $user;
+        });
+    }
 
-            throw $exception;
-        }
+    public function destroy(int $id): void
+    {
+        DB::transaction(function () use ($id) {
+            User::findOrFail($id)->delete();
+        });
     }
 }

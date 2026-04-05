@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreUserRequest extends FormRequest
+class UpdateSchoolRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -21,11 +21,11 @@ class StoreUserRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
-            'name' => ['required', 'string', 'max:255', 'min:3', 'unique:users,name'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'affiliation' => ['required', 'string', 'in:seduc,school'],
+        $school = $this->route('school');
 
+        return [
+            'name'      => 'required|string|max:255',
+            'inep_code' => 'required|string|max:8|unique:schools,inep_code,' . ($school?->id ?? 'NULL'),
         ];
     }
 }

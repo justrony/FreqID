@@ -26,7 +26,7 @@ class AuthController extends Controller
         if ($user && Hash::check($credentials['password'], $user->password)) {
             Auth::login($user);
             $request->session()->regenerate();
-            return redirect()->intended('/home');
+            return redirect()->intended('/home/usuarios');
         }
 
         return back()->withErrors([

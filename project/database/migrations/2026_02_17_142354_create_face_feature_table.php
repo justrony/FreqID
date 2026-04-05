@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('face_feature', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('student_id')->constrained('schools');
-            $table->json('embedding')->nullable();
+            $table->foreignId('student_id')->unique()->constrained('students')->cascadeOnDelete();
+            $table->jsonb('landmark')->nullable();
             $table->string('image-path')->nullable();
             $table->timestamps();
         });

@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('attendances', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->constrained('students');
+            $table->foreignId('class_id')->constrained('classes');
             $table->timestamp('marked_at');
             $table->string('status')->default('presente');
             $table->decimal('confidence_score', 5, 4)->nullable();
