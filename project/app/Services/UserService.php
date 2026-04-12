@@ -19,20 +19,31 @@ class UserService
     public function store(array $validated): User
     {
         return DB::transaction(function () use ($validated) {
-            return User::create(array_merge($validated, [
+            $schoolIds = $validated['school_ids'] ?? [];
+            unset($validated['school_ids']);
+
+            $user = User::create(array_merge($validated, [
                 'password' => Hash::make($this->defaultPassword),
             ]));
+
+            $user->schools()->sync($schoolIds);
+
+            return $user;
         });
     }
 
     public function update(User $user, array $validated, bool $resetPassword = false): User
     {
         return DB::transaction(function () use ($user, $validated, $resetPassword) {
+            $schoolIds = $validated['school_ids'] ?? [];
+            unset($validated['school_ids']);
+
             $data = $resetPassword
                 ? array_merge($validated, ['password' => Hash::make($this->defaultPassword)])
                 : $validated;
 
             $user->update($data);
+            $user->schools()->sync($schoolIds);
 
             return $user;
         });
