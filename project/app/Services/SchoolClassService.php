@@ -3,14 +3,25 @@
 namespace App\Services;
 
 use App\Models\SchoolClass;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class SchoolClassService
 {
-    public function getAll(): Collection
+    public function getAll(User $user): Collection
     {
-        return SchoolClass::with('school')->orderBy('name')->get();
+        if (Gate::forUser($user)->allows('access-admin')) {
+            return SchoolClass::with('school')->orderBy('name')->get();
+        }
+
+        $schoolIds = $user->schools()->pluck('schools.id');
+
+        return SchoolClass::with('school')
+            ->whereIn('school_id', $schoolIds)
+            ->orderBy('name')
+            ->get();
     }
 
     public function getAllBySchool(int $schoolId): Collection

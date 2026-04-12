@@ -4,23 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreSchoolClassRequest;
 use App\Http\Requests\UpdateSchoolClassRequest;
-use App\Models\School;
 use App\Models\SchoolClass;
 use App\Services\SchoolClassService;
+use App\Services\SchoolService;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
 
 class SchoolClassController extends Controller
 {
-    public function __construct(private SchoolClassService $schoolClassService) {}
+    public function __construct(
+        private SchoolClassService $schoolClassService,
+        private SchoolService $schoolService
+    ) {}
 
     public function index()
     {
-        $schoolClasses = $this->schoolClassService->getAll();
+        $schoolClasses = $this->schoolClassService->getAll(auth()->user());
         return view('pages.index.turmas', compact('schoolClasses'));
     }
 
     public function create()
     {
-        $schools = School::orderBy('name')->get();
+        $schools = $this->schoolService->getForSelect(auth()->user());
         return view('pages.forms.create.fc-turma', compact('schools'));
     }
 
@@ -29,8 +34,12 @@ class SchoolClassController extends Controller
         $validated = $request->validated();
         try {
             $this->schoolClassService->store($validated);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao cadastrar turma: ' . $e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('SchoolClassController@store DB error', [
+                'message' => $e->getMessage(),
+                'sql'     => $e->getSql(),
+            ]);
+            return redirect()->back()->with('error', 'Erro ao cadastrar turma. Tente novamente.');
         }
 
         return redirect()->route('turma.index')->with('success', 'Turma cadastrada com sucesso!');
@@ -38,7 +47,7 @@ class SchoolClassController extends Controller
 
     public function edit(SchoolClass $schoolClass)
     {
-        $schools = School::orderBy('name')->get();
+        $schools = $this->schoolService->getForSelect(auth()->user());
         return view('pages.forms.edit.fe-turma', compact('schoolClass', 'schools'));
     }
 
@@ -47,8 +56,12 @@ class SchoolClassController extends Controller
         $validated = $request->validated();
         try {
             $this->schoolClassService->update($schoolClass, $validated);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao atualizar turma: ' . $e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('SchoolClassController@update DB error', [
+                'message' => $e->getMessage(),
+                'sql'     => $e->getSql(),
+            ]);
+            return redirect()->back()->with('error', 'Erro ao atualizar turma. Tente novamente.');
         }
 
         return redirect()->route('turma.index')->with('success', 'Turma atualizada com sucesso!');
@@ -58,8 +71,12 @@ class SchoolClassController extends Controller
     {
         try {
             $this->schoolClassService->destroy($schoolClass->id);
-        } catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao excluir turma: ' . $e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('SchoolClassController@destroy DB error', [
+                'message' => $e->getMessage(),
+                'sql'     => $e->getSql(),
+            ]);
+            return redirect()->back()->with('error', 'Erro ao excluir turma. Tente novamente.');
         }
 
         return redirect()->route('turma.index')->with('success', 'Turma excluída com sucesso!');

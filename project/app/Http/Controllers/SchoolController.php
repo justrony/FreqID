@@ -6,6 +6,8 @@ use App\Http\Requests\StoreSchoolRequest;
 use App\Http\Requests\UpdateSchoolRequest;
 use App\Services\SchoolService;
 use App\Models\School;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Log;
 
 
 class SchoolController extends Controller
@@ -17,7 +19,7 @@ class SchoolController extends Controller
 
     public function index()
     {
-        $schools = $this->schoolService->getAll();
+        $schools = $this->schoolService->getAll(auth()->user());
         return view('pages.index.escolas', compact('schools'));
     }
 
@@ -31,8 +33,12 @@ class SchoolController extends Controller
         $validated = $request->validated();
         try{
             $this->schoolService->store($validated);
-        }catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao cadastrar escola: ' . $e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('SchoolController@store DB error', [
+                'message' => $e->getMessage(),
+                'sql'     => $e->getSql(),
+            ]);
+            return redirect()->back()->with('error', 'Erro ao cadastrar escola. Tente novamente.');
         }
 
         return redirect()->route('escola.index')->with('success', 'Escola cadastrada com sucesso!');
@@ -48,8 +54,12 @@ class SchoolController extends Controller
         $validated = $request->validated();
         try{
             $this->schoolService->update($school, $validated);
-        }catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao atualizar escola: ' . $e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('SchoolController@update DB error', [
+                'message' => $e->getMessage(),
+                'sql'     => $e->getSql(),
+            ]);
+            return redirect()->back()->with('error', 'Erro ao atualizar escola. Tente novamente.');
         }
 
         return redirect()->route('escola.index')->with('success', 'Escola atualizada com sucesso!');
@@ -59,8 +69,12 @@ class SchoolController extends Controller
     {
         try{
             $this->schoolService->destroy($school->id);
-        }catch (\Exception $e) {
-            return redirect()->back()->with('error', 'Erro ao excluir escola: ' . $e->getMessage());
+        } catch (QueryException $e) {
+            Log::error('SchoolController@destroy DB error', [
+                'message' => $e->getMessage(),
+                'sql'     => $e->getSql(),
+            ]);
+            return redirect()->back()->with('error', 'Erro ao excluir escola. Tente novamente.');
         }
 
         return redirect()->route('escola.index')->with('success', 'Escola excluída com sucesso!');
