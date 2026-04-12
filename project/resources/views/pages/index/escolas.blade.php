@@ -1,5 +1,5 @@
 @extends('layouts.home')
-@section('title','Listagem de Escolas - FreqID')
+@section('title','Listagem de Escolas - ' . config('app.name'))
 
 @section('content')
     <main class="col-md-9 ms-sm-auto col-lg-10 p-0">
