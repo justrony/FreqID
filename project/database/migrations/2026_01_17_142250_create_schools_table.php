@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('schools', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('inep_code');
+            $table->string('inep_code')->unique();
             $table->timestamps();
         });
     }

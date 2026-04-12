@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('face_feature', function (Blueprint $table) {
             $table->id();
             $table->foreignId('student_id')->unique()->constrained('students')->cascadeOnDelete();
-            $table->jsonb('landmark')->nullable();
-            $table->string('image-path')->nullable();
+            $table->jsonb('landmark_hash')->nullable();
+            $table->string('image_path')->nullable();
             $table->timestamps();
         });
     }
