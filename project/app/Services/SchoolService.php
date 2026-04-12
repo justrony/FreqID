@@ -3,15 +3,30 @@
 namespace App\Services;
 
 use App\Models\School;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 class SchoolService
 {
 
-    public function getAll(): Collection
+    public function getAll(User $user): Collection
     {
-        return School::all();
+        if (Gate::forUser($user)->allows('access-admin')) {
+            return School::orderBy('name')->get();
+        }
+
+        return $user->schools()->orderBy('name')->get();
+    }
+
+    public function getForSelect(User $user): Collection
+    {
+        if (Gate::forUser($user)->allows('access-admin')) {
+            return School::orderBy('name')->get();
+        }
+
+        return $user->schools()->orderBy('name')->get();
     }
 
     public function store(array $validated): School
@@ -32,10 +47,10 @@ class SchoolService
         });
     }
 
-    public function destroy(int $id): void
+    public function destroy(int $id): int
     {
-        DB::transaction(function () use ($id) {
-            School::findOrFail($id)->delete();
+        return DB::transaction(function () use ($id) {
+            return School::findOrFail($id)->delete();
         });
     }
 }
