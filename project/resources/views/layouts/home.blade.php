@@ -32,7 +32,7 @@
                         <li class="nav-item"><a class="nav-link" href="{{ route('turmas') }}"><i class="bi bi-people"></i> Turmas</a></li>
                         @can('access-admin')
                             <li class="nav-item"><a class="nav-link" href="{{route('usuarios')}}"><i class="bi bi-person-gear"></i> Usuários</a></li>
-                            <li class="nav-item"><a class="nav-link" href=""><i class="bi bi-buildings"></i> Escolas</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ route('escolas') }}"><i class="bi bi-buildings"></i> Escolas</a></li>
                         @endcan
                     </ul>
                 </div>

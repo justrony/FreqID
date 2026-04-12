@@ -5,7 +5,7 @@
     <main class="col-md-9 ms-sm-auto col-lg-10 p-0">
         <header class="top-header">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 class="m-0 text-secondary fw-bold">Administração: Cadastrar Novo Usuário</h5>
+                <h5 class="m-0 text-secondary fw-bold">Admin: Cadastrar Novo Usuário</h5>
                 <a href="{{route('usuario.index')}}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-2">
                     <i class="bi bi-arrow-left"></i>
                     <span>Voltar</span>
@@ -66,7 +66,7 @@
                                 <div class="mb-4">
                                     <label for="affiliation" class="form-label small fw-bold text-muted">Afiliação</label>
                                     <div class="input-group">
-                                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-building"></i></span>
+                                        <span class="input-group-text bg-light border-end-0"><i class="bi bi-buildings"></i></span>
                                         <select name="affiliation"
                                                 id="affiliation"
                                                 class="form-select bg-light border-start-0 @error('affiliation') is-invalid @enderror"
@@ -79,6 +79,22 @@
                                         <div class="invalid-feedback">{{ $message }}</div>
                                         @enderror
                                     </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label for="school_ids" class="form-label small fw-bold text-muted">Escolas Vinculadas</label>
+                                    <select name="school_ids[]" id="school_ids" class="form-select bg-light @error('school_ids') is-invalid @enderror" multiple>
+                                        @foreach($schools as $school)
+                                            <option value="{{ $school->id }}"
+                                                {{ in_array($school->id, old('school_ids', [])) ? 'selected' : '' }}>
+                                                {{ $school->name }} — {{ $school->inep_code }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                    <div class="form-text small">Segure Ctrl (ou Cmd) para selecionar mais de uma escola.</div>
+                                    @error('school_ids')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
 
                                 <div class="d-grid">
