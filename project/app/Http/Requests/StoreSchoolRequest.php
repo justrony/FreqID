@@ -11,7 +11,7 @@ class StoreSchoolRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return true;
+        return $this->user()->can('access-admin');
     }
 
     /**

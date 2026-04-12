@@ -14,27 +14,31 @@ class UpdateUserRequest extends FormRequest
 
     public function rules(): array
     {
+        $user = $this->route('user');
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:255',
                 'min:3',
-                Rule::unique('users', 'name')->ignore($this->user),
+                Rule::unique('users', 'name')->ignore($user?->id)->whereNull('deleted_at'),
             ],
             'email' => [
                 'required',
                 'string',
                 'email',
                 'max:255',
-                Rule::unique('users', 'email')->ignore($this->user),
+                Rule::unique('users', 'email')->ignore($user?->id)->whereNull('deleted_at'),
             ],
             'reset_password' => ['nullable', 'in:on'],
             'affiliation' => [
-                'required', 
-                'string', 
+                'required',
+                'string',
                 Rule::in(['seduc', 'school'])
-            ],  
+            ],
+            'school_ids'   => ['nullable', 'array'],
+            'school_ids.*' => ['integer', 'exists:schools,id'],
         ];
     }
 
