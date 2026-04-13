@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/', function () {
-    return redirect()->route('usuarios');
+    return redirect()->route('inicio');
 });
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
@@ -66,8 +66,6 @@ Route::middleware(['auth','can:access-admin'])->prefix('/usuarios')
 Route::middleware('auth')->prefix('/home')
     ->controller(RelatorioController::class)->name('relatorio.')->group(function () {
         Route::get('/','grafico')->name('inicio');
-        Route::get('/html','gerarHTML')->name('html');
-        Route::get('/xls','gerarXLS')->name('xls');
     });
 
 
