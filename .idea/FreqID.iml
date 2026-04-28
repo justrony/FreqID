@@ -138,6 +138,7 @@
       <excludeFolder url="file://$MODULE_DIR$/project/vendor/voku/portable-ascii" />
       <excludeFolder url="file://$MODULE_DIR$/project/vendor/webmozart/assert" />
       <excludeFolder url="file://$MODULE_DIR$/project/vendor/lucascudo/laravel-pt-br-localization" />
+      <excludeFolder url="file://$MODULE_DIR$/project/vendor/laravel/sanctum" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

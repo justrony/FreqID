@@ -147,6 +147,7 @@
       <path value="$PROJECT_DIR$/project/vendor/symfony/var-dumper" />
       <path value="$PROJECT_DIR$/project/vendor/symfony/uid" />
       <path value="$PROJECT_DIR$/project/vendor/lucascudo/laravel-pt-br-localization" />
+      <path value="$PROJECT_DIR$/project/vendor/laravel/sanctum" />
     </include_path>
   </component>
   <component name="PhpProjectSharedConfiguration" php_language_level="8.2" />

@@ -9,12 +9,14 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::get('/', function () {
-    return redirect()->route('inicio');
+    return redirect()->route('relatorio.inicio');
 });
 
 Route::get('/login', [AuthController::class, 'showLoginForm'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.post');
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+
+Route::get('/auth/token', [AuthController::class, 'apiToken'])->middleware('auth')->name('auth.token');
 
 Route::middleware('auth')->group(function () {
 
@@ -61,6 +63,13 @@ Route::middleware(['auth','can:access-admin'])->prefix('/usuarios')
         Route::get('/{schoolClass}/edit', 'edit')->name('edit');
         Route::put('/{schoolClass}/update', 'update')->name('update');
         Route::delete('/{schoolClass}/delete', 'destroy')->name('destroy');
+    });
+
+    Route::middleware(['auth'])->prefix('/biometria')
+    ->controller(\App\Http\Controllers\BiometricEnrollmentController::class)->name('biometric.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{studentId}', 'show')->name('show');
+        Route::post('/{studentId}/capturar', 'store')->name('store');
     });
 
 Route::middleware('auth')->prefix('/home')

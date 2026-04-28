@@ -6,12 +6,12 @@ use App\Models\Attendance;
 
 class AttendanceService
 {
-    public function registerFrequency(array $data)
+    public function registerFrequency(array $data): Attendance
     {
-
         return Attendance::create([
             'student_id' => $data['student_id'],
-            'check_in'   => now(),
+            'class_id'   => $data['class_id'],
+            'marked_at'  => now(),
             'status'     => 'presente',
         ]);
     }

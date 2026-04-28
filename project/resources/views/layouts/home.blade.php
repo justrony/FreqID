@@ -30,6 +30,7 @@
                     <ul class="nav flex-column mt-3">
                         <li class="nav-item"><a class="nav-link" href="{{route('relatorio.inicio')}}"><i class="bi bi-house-door"></i> Início</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ route('turmas') }}"><i class="bi bi-people"></i> Turmas</a></li>
+                        <li class="nav-item"><a class="nav-link {{ request()->routeIs('biometric.*') ? 'active' : '' }}" href="{{ route('biometric.index') }}"><i class="bi bi-person-bounding-box"></i> Biometria</a></li>
                         @can('access-admin')
                             <li class="nav-item"><a class="nav-link" href="{{route('usuarios')}}"><i class="bi bi-person-gear"></i> Usuários</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ route('escolas') }}"><i class="bi bi-buildings"></i> Escolas</a></li>
