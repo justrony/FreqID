@@ -6,19 +6,7 @@ use App\Models\FaceFeature;
 use App\Models\Student;
 use Illuminate\Support\Facades\Log;
 
-/**
- * GoF Bridge — Abstraction
- *
- * Contém a lógica de negócio de cadastro biométrico e delega
- * a CAPTURA ao CaptureDriver (Implementor), que pode ser trocado
- * sem alterar esta classe (Python, WebCam JS, Mock em testes, etc.).
- *
- * Responsabilidades desta classe:
- *  - Validar acesso do professor ao aluno
- *  - Coordenar a captura via driver
- *  - Persistir o FaceFeature no banco
- *  - Registrar logs de auditoria
- */
+
 class BiometricRegistrar
 {
     public function __construct(
@@ -26,10 +14,9 @@ class BiometricRegistrar
     ) {}
 
     /**
-     * Cadastra (ou atualiza) a biometria facial de um aluno.
      *
-     * @param  int   $studentId  ID do aluno
-     * @param  int   $userId     ID do professor que está realizando o cadastro
+     * @param  int   $studentId
+     * @param  int   $userId
      * @return FaceFeature
      *
      * @throws CaptureException
@@ -37,10 +24,9 @@ class BiometricRegistrar
      */
     public function register(int $studentId, int $userId): FaceFeature
     {
-        // 1. Garante que o aluno existe
         $student = Student::findOrFail($studentId);
 
-        // 2. Valida escopo: professor deve pertencer à escola do aluno
+
         $hasAccess = \App\Models\User::find($userId)
             ?->schools()
             ->where('schools.id', $student->school_id)
@@ -52,10 +38,9 @@ class BiometricRegistrar
             );
         }
 
-        // 3. Delega a captura ao driver (Bridge)
+
         $captureData = $this->driver->capture($studentId);
 
-        // 4. Persiste a biometria
         $faceFeature = FaceFeature::updateOrCreate(
             ['student_id' => $studentId],
             [

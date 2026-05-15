@@ -4,13 +4,6 @@ namespace App\Services\Biometric;
 
 use Illuminate\Support\Facades\Http;
 
-/**
- * GoF Bridge — ConcreteImplementor
- *
- * Driver que delega a captura ao serviço Python/FastAPI
- * rodando localmente com câmera real via OpenCV + MediaPipe.
- * O Python captura o frame, extrai landmarks e devolve o hash.
- */
 class PythonCameraDriver implements CaptureDriver
 {
     public function __construct(
@@ -19,9 +12,6 @@ class PythonCameraDriver implements CaptureDriver
     ) {}
 
     /**
-     * Chama POST /register no Python, que captura um frame da câmera,
-     * extrai os landmarks e retorna o hash para ser persistido.
-     *
      * @throws CaptureException
      */
     public function capture(int $studentId): array
