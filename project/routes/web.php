@@ -75,6 +75,7 @@ Route::middleware(['auth','can:access-admin'])->prefix('/usuarios')
 Route::middleware('auth')->prefix('/home')
     ->controller(RelatorioController::class)->name('relatorio.')->group(function () {
         Route::get('/','grafico')->name('inicio');
+        Route::get('/exportar/{format}','exportar')->name('exportar');
     });
 
 

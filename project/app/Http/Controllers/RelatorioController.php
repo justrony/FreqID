@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\CsvDashboardExporter;
+use App\Exports\JsonDashboardExporter;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
 
@@ -62,5 +64,35 @@ class RelatorioController extends Controller
             // ranking
             'topFaltas'       => $topFaltas,
         ]);
+    }
+
+    public function exportar(Request $request, string $format)
+    {
+        $ano = (int) $request->input('ano', now()->year);
+        $user = auth()->user();
+        $schoolIds = $this->dashboard->resolveSchoolScope($user);
+        
+        $kpis = $this->dashboard->kpis($ano, $schoolIds);
+
+        // Uso do Template Method: chamamos o método abstrato 'export' através da instância correta.
+        if ($format === 'csv') {
+            $exporter = new CsvDashboardExporter();
+            $content = $exporter->export($kpis);
+            
+            return response($content, 200, [
+                'Content-Type' => 'text/csv',
+                'Content-Disposition' => 'attachment; filename="dashboard_export.csv"',
+            ]);
+        } elseif ($format === 'json') {
+            $exporter = new JsonDashboardExporter();
+            $content = $exporter->export($kpis);
+            
+            return response($content, 200, [
+                'Content-Type' => 'application/json',
+                'Content-Disposition' => 'attachment; filename="dashboard_export.json"',
+            ]);
+        }
+
+        abort(404, 'Formato de exportação não suportado');
     }
 }
