@@ -8,6 +8,7 @@ use App\Services\FaceScanService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Symfony\Component\HttpFoundation\Response as ResponseAlias;
 
 class FaceScanController extends Controller
 {
@@ -29,7 +30,7 @@ class FaceScanController extends Controller
         if (!$faceFeature || !$faceFeature->student_id) {
             return response()->json([
                 'message' => 'Aluno não identificado. Biometria não cadastrada.',
-            ], Response::HTTP_NOT_FOUND);
+            ], ResponseAlias::HTTP_NOT_FOUND);
         }
 
         $attendance = $this->attendanceService->registerFrequency([
@@ -46,7 +47,7 @@ class FaceScanController extends Controller
                 'marked_at' => $attendance->marked_at,
                 'status'    => $attendance->status,
             ],
-        ], Response::HTTP_CREATED);
+        ], ResponseAlias::HTTP_CREATED);
     }
 
     public function registerFace(Request $request): JsonResponse
@@ -65,7 +66,7 @@ class FaceScanController extends Controller
         if (!$hasAccess) {
             return response()->json([
                 'message' => 'Acesso negado. Você não leciona nesta escola.',
-            ], Response::HTTP_FORBIDDEN);
+            ], ResponseAlias::HTTP_FORBIDDEN);
         }
 
         $faceFeature = $this->faceScanService->registerFace($validated);
@@ -77,6 +78,6 @@ class FaceScanController extends Controller
                 'student_id'    => $faceFeature->student_id,
                 'landmark_hash' => $faceFeature->landmark_hash,
             ],
-        ], Response::HTTP_CREATED);
+        ], ResponseAlias::HTTP_CREATED);
     }
 }

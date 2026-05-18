@@ -27,8 +27,15 @@ class BiometricRegistrar
         $student = Student::findOrFail($studentId);
 
 
-        $hasAccess = \App\Models\User::find($userId)
-            ?->schools()
+        $user = \App\Models\User::find($userId);
+
+        if ($user === null) {
+            throw new \Illuminate\Auth\Access\AuthorizationException(
+                'Usuário não encontrado.'
+            );
+        }
+
+        $hasAccess = $user->schools()
             ->where('schools.id', $student->school_id)
             ->exists();
 
@@ -45,7 +52,7 @@ class BiometricRegistrar
             ['student_id' => $studentId],
             [
                 'landmark_hash' => $captureData['landmark_hash'],
-                'embedding'     => $captureData['landmarks'] ?: null,
+                'embedding'     => $captureData['landmarks'] ?? null,
             ]
         );
 

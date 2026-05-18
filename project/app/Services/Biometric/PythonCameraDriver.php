@@ -16,15 +16,20 @@ class PythonCameraDriver implements CaptureDriver
      */
     public function capture(int $studentId): array
     {
-        try {
-            $token = auth()->user()?->createToken('freqid-scanner')->plainTextToken;
+        $user      = auth()->user();
+        $tokenObj  = $user?->createToken('freqid-scanner-ephemeral');
+        $plainText = $tokenObj?->plainTextToken;
 
+        try {
             $response = Http::timeout($this->timeoutSeconds)
-                ->withToken($token)
+                ->withToken($plainText)
                 ->post("{$this->baseUrl}/register", [
                     'student_id'    => $studentId,
-                    'teacher_token' => $token,
+                    'teacher_token' => $plainText,
                 ]);
+
+            // Revoga imediatamente — token de uso único
+            $tokenObj?->accessToken?->delete();
 
             if ($response->failed()) {
                 throw new CaptureException(
@@ -43,8 +48,10 @@ class PythonCameraDriver implements CaptureDriver
                 'landmarks'     => $data['landmarks'] ?? [],
             ];
         } catch (CaptureException $e) {
+            $tokenObj?->accessToken?->delete(); // garante revogação mesmo em erro
             throw $e;
         } catch (\Throwable $e) {
+            $tokenObj?->accessToken?->delete();
             throw new CaptureException(
                 "Falha ao comunicar com o serviço de câmera: {$e->getMessage()}",
                 previous: $e
