@@ -6,6 +6,7 @@ use App\Exports\CsvDashboardExporter;
 use App\Exports\JsonDashboardExporter;
 use App\Services\DashboardService;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
 
 class RelatorioController extends Controller
 {
@@ -71,28 +72,27 @@ class RelatorioController extends Controller
         $ano = (int) $request->input('ano', now()->year);
         $user = auth()->user();
         $schoolIds = $this->dashboard->resolveSchoolScope($user);
-        
+
         $kpis = $this->dashboard->kpis($ano, $schoolIds);
 
-        // Uso do Template Method: chamamos o método abstrato 'export' através da instância correta.
         if ($format === 'csv') {
             $exporter = new CsvDashboardExporter();
             $content = $exporter->export($kpis);
-            
-            return response($content, 200, [
+
+            return response($content, Response::HTTP_OK, [
                 'Content-Type' => 'text/csv',
                 'Content-Disposition' => 'attachment; filename="dashboard_export.csv"',
             ]);
         } elseif ($format === 'json') {
             $exporter = new JsonDashboardExporter();
             $content = $exporter->export($kpis);
-            
-            return response($content, 200, [
+
+            return response($content, Response::HTTP_OK, [
                 'Content-Type' => 'application/json',
                 'Content-Disposition' => 'attachment; filename="dashboard_export.json"',
             ]);
         }
 
-        abort(404, 'Formato de exportação não suportado');
+        abort(Response::HTTP_NOT_ACCEPTABLE, 'Formato de exportação não suportado');
     }
 }
