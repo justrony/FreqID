@@ -9,7 +9,7 @@
                     <h5 class="m-0 fw-bold" style="color: var(--primary-color)">
                         <i class="bi bi-person-bounding-box me-2"></i>Cadastro Biométrico Facial
                     </h5>
-                    <small class="text-muted">Selecione o aluno para capturar a biometria</small>
+                    <small class="text-muted">Selecione o aluno para enviar a foto de cadastro</small>
                 </div>
                 <span class="badge bg-secondary">{{ $students->count() }} aluno(s)</span>
             </div>
@@ -39,7 +39,7 @@
                     <i class="bi bi-check-circle me-1"></i> Biometria cadastrada
                 </span>
                 <span class="badge rounded-pill" style="background-color: #6c757d; font-weight: 400; padding: 6px 12px;">
-                    <i class="bi bi-camera me-1"></i> Aguardando captura
+                    <i class="bi bi-upload me-1"></i> Aguardando foto
                 </span>
             </div>
 
@@ -89,8 +89,8 @@
                                     <td class="text-end pe-4">
                                         <a href="{{ route('biometric.show', $student->id) }}"
                                            class="btn btn-sm {{ $student->face_feature_exists ? 'btn-outline-primary' : 'btn-primary' }} d-inline-flex align-items-center gap-1">
-                                            <i class="bi {{ $student->face_feature_exists ? 'bi-arrow-repeat' : 'bi-camera-fill' }}"></i>
-                                            {{ $student->face_feature_exists ? 'Recapturar' : 'Capturar' }}
+                                            <i class="bi {{ $student->face_feature_exists ? 'bi-arrow-repeat' : 'bi-upload' }}"></i>
+                                            {{ $student->face_feature_exists ? 'Reenviar Foto' : 'Enviar Foto' }}
                                         </a>
                                     </td>
                                 </tr>

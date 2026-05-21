@@ -1,114 +1,104 @@
 @extends('layouts.home')
-@section('title', 'Captura Biométrica — {{ $student->name }} - FreqID')
+@section('title', 'Cadastro Biométrico — {{ $student->name }} - FreqID')
 
 @section('custom_css')
 <style>
-    /* ---- Painel de câmera ---- */
-    .camera-panel {
-        background: #0d1117;
+    /* ── Drop Zone ─────────────────────────────────────────── */
+    .dropzone-area {
+        border: 2.5px dashed #cbd5e1;
         border-radius: 16px;
-        overflow: hidden;
+        background: #f8fafc;
+        min-height: 280px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: border-color .2s, background .2s;
         position: relative;
-        min-height: 320px;
+        overflow: hidden;
+    }
+    .dropzone-area:hover,
+    .dropzone-area.drag-over {
+        border-color: var(--primary-color);
+        background: #eff6ff;
+    }
+    .dropzone-area.has-preview {
+        border-style: solid;
+        border-color: #22c55e;
+        background: #f0fdf4;
+        min-height: 0;
+        padding: 0;
+    }
+    #photoInput { display: none; }
+
+    /* ── Preview ───────────────────────────────────────────── */
+    #previewWrapper {
+        display: none;
+        position: relative;
+        width: 100%;
+    }
+    #photoPreview {
+        width: 100%;
+        max-height: 380px;
+        object-fit: contain;
+        border-radius: 14px;
+        display: block;
+    }
+    #previewOverlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0,0,0,0.45);
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
+        opacity: 0;
+        transition: opacity .2s;
     }
-    /* Stream de vídeo real */
-    #cameraStream {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 16px;
-        display: none; /* Escondido até a câmera ser ativada */
-    }
-    /* Overlay sobre o stream */
-    .camera-overlay {
-        position: absolute;
-        top: 0; left: 0; right: 0; bottom: 0;
-        pointer-events: none;
-    }
-    .camera-panel #camera-placeholder {
-        color: rgba(255,255,255,0.3);
-        text-align: center;
-    }
-    /* Scanner animado */
-    .scan-line {
-        display: none;
-        position: absolute;
-        top: 0; left: 0; right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, transparent, var(--accent-color), transparent);
-        animation: scanDown 2s linear infinite;
-        z-index: 10;
-    }
-    @keyframes scanDown {
-        0%   { top: 0%; }
-        100% { top: 100%; }
-    }
-    /* Corner brackets */
-    .corner-tl, .corner-tr, .corner-bl, .corner-br {
-        position: absolute;
-        width: 28px;
-        height: 28px;
-        border-color: var(--accent-color);
-        border-style: solid;
-        opacity: 0.9;
-        z-index: 10;
-    }
-    .corner-tl { top:12px; left:12px;  border-width: 3px 0 0 3px; }
-    .corner-tr { top:12px; right:12px; border-width: 3px 3px 0 0; }
-    .corner-bl { bottom:12px; left:12px;  border-width: 0 0 3px 3px; }
-    .corner-br { bottom:12px; right:12px; border-width: 0 3px 3px 0; }
+    #previewWrapper:hover #previewOverlay { opacity: 1; }
 
-    /* Badge de câmera ao vivo */
-    .live-badge {
+    /* ── Face detection badge ──────────────────────────────── */
+    #faceBadge {
         display: none;
         position: absolute;
-        top: 14px; left: 50%;
+        top: 12px;
+        left: 50%;
         transform: translateX(-50%);
-        background: rgba(0,0,0,0.6);
+        background: rgba(34,197,94,0.9);
         color: #fff;
-        font-size: 0.7rem;
-        padding: 3px 10px;
+        font-size: 0.72rem;
+        padding: 4px 12px;
         border-radius: 20px;
-        z-index: 11;
-        align-items: center;
-        gap: 5px;
-    }
-    .live-badge .live-dot {
-        width: 7px; height: 7px; border-radius: 50%;
-        background: #ef4444;
-        animation: pulse 1s infinite;
-        display: inline-block;
+        font-weight: 600;
+        white-space: nowrap;
+        z-index: 5;
     }
 
-    /* Status badge */
+    /* ── Status dot ────────────────────────────────────────── */
     .status-dot {
-        width: 10px;
-        height: 10px;
+        width: 10px; height: 10px;
         border-radius: 50%;
         display: inline-block;
         margin-right: 6px;
     }
-    .status-dot.ready   { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
-    .status-dot.loading { background: #f59e0b; box-shadow: 0 0 6px #f59e0b; animation: pulse 1s infinite; }
+    .status-dot.idle    { background: #94a3b8; }
+    .status-dot.ok      { background: #22c55e; box-shadow: 0 0 6px #22c55e; }
     .status-dot.error   { background: #ef4444; }
-    .status-dot.live    { background: #22c55e; box-shadow: 0 0 6px #22c55e; animation: pulse 1s infinite; }
+    .status-dot.loading { background: #f59e0b; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    /* ── Step tracker ──────────────────────────────────────── */
+    .step-item { display: flex; align-items: flex-start; gap: 10px; opacity: .4; transition: .3s; }
+    .step-item.active { opacity: 1; }
+    .step-item.done   { opacity: .7; }
+    .step-icon { width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:.75rem; }
+    .step-item.active .step-icon { background: var(--accent-color); color:#fff; }
+    .step-item.done   .step-icon { background: #22c55e; color:#fff; }
+    .step-item        .step-icon { background: #e2e8f0; color:#94a3b8; }
 
-    /* Step tracker */
-    .step-item { display: flex; align-items: flex-start; gap: 10px; opacity: 0.4; transition: 0.3s; }
-    .step-item.active  { opacity: 1; }
-    .step-item.done    { opacity: 0.7; }
-    .step-icon { width: 28px; height: 28px; border-radius: 50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:0.75rem; }
-    .step-item.active .step-icon { background: var(--accent-color); color: white; }
-    .step-item.done   .step-icon { background: #22c55e; color: white; }
-    .step-item        .step-icon { background: #e2e8f0; color: #94a3b8; }
-
-    /* Erro de câmera */
-    #camera-error { display: none; }
+    /* ── Upload button ─────────────────────────────────────── */
+    #btnSubmit:disabled { opacity: .55; cursor: not-allowed; }
 </style>
 @endsection
 
@@ -118,7 +108,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="m-0 fw-bold" style="color:var(--primary-color)">
-                    <i class="bi bi-camera-fill me-2"></i>Captura Biométrica
+                    <i class="bi bi-image me-2"></i>Cadastro Biométrico por Foto
                 </h5>
                 <small class="text-muted">Aluno: <strong>{{ $student->name }}</strong> · {{ $student->schoolClass->name ?? '' }}</small>
             </div>
@@ -135,7 +125,7 @@
         <div class="alert alert-warning d-flex align-items-center gap-2 mb-4">
             <i class="bi bi-exclamation-triangle-fill fs-5"></i>
             <div>
-                Este aluno já possui biometria cadastrada. Ao capturar novamente, o registro anterior será
+                Este aluno já possui biometria cadastrada. Ao enviar uma nova foto, o registro anterior será
                 <strong>substituído</strong>.
             </div>
         </div>
@@ -145,6 +135,17 @@
         <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
             <i class="bi bi-x-circle-fill fs-5"></i>
             {{ session('error') }}
+        </div>
+        @endif
+
+        @if($errors->any())
+        <div class="alert alert-danger d-flex align-items-center gap-2 mb-4">
+            <i class="bi bi-x-circle-fill fs-5"></i>
+            <div>
+                @foreach($errors->all() as $error)
+                    <div>{{ $error }}</div>
+                @endforeach
+            </div>
         </div>
         @endif
 
@@ -180,95 +181,83 @@
                             @endif
                         </div>
 
-                        {{-- Painel de câmera com stream ao vivo --}}
-                        <div class="camera-panel mb-3" id="cameraPanel">
+                        {{-- Formulário de upload --}}
+                        <form action="{{ route('biometric.store', $student->id) }}"
+                              method="POST"
+                              enctype="multipart/form-data"
+                              id="enrollForm">
+                            @csrf
 
-                            {{-- Corners sempre visíveis --}}
-                            <div class="corner-tl"></div>
-                            <div class="corner-tr"></div>
-                            <div class="corner-bl"></div>
-                            <div class="corner-br"></div>
+                            {{-- Drop Zone --}}
+                            <div class="dropzone-area mb-3" id="dropZone">
 
-                            {{-- Scan line (aparece ao capturar) --}}
-                            <div class="scan-line" id="scanLine"></div>
+                                {{-- Badge de rosto detectado (client-side) --}}
+                                <span id="faceBadge"><i class="bi bi-person-check me-1"></i>Rosto detectado</span>
 
-                            {{-- Badge LIVE --}}
-                            <div class="live-badge" id="liveBadge">
-                                <span class="live-dot"></span> AO VIVO
-                            </div>
-
-                            {{-- Stream MJPEG do Python --}}
-                            <img id="cameraStream"
-                                 src=""
-                                 alt="Stream da câmera"
-                                 style="width:100%;border-radius:16px;display:none;">
-
-                            {{-- Placeholder (antes de ativar) --}}
-                            <div id="camera-placeholder">
-                                <i class="bi bi-camera-fill d-block mb-2" style="font-size:2.5rem"></i>
-                                <span style="font-size:0.85rem">Clique em <strong>Ativar Câmera</strong><br>para ver o feed ao vivo</span>
-                            </div>
-
-                            {{-- Loader de conexão --}}
-                            <div id="camera-connecting" class="text-center text-white" style="display:none">
-                                <div class="spinner-border text-info mb-2" style="width:2rem;height:2rem"></div>
-                                <div style="font-size:0.85rem">Conectando à câmera...</div>
-                            </div>
-
-                            {{-- Erro de câmera offline --}}
-                            <div id="camera-error" class="text-center" style="display:none">
-                                <i class="bi bi-camera-video-off fs-1 mb-2" style="color:#ef4444"></i>
-                                <div style="font-size:0.85rem;color:#ef4444">
-                                    Serviço de câmera indisponível<br>
-                                    <small class="text-muted">Verifique se o servidor Python está rodando na porta 8001</small>
+                                {{-- Placeholder inicial --}}
+                                <div id="dropPlaceholder" class="text-center px-4 py-3">
+                                    <i class="bi bi-cloud-arrow-up" style="font-size:3rem;color:#94a3b8"></i>
+                                    <p class="fw-semibold mt-3 mb-1" style="color:#475569">
+                                        Arraste a foto aqui ou clique para selecionar
+                                    </p>
+                                    <p class="text-muted small mb-3">JPG, PNG ou WEBP · máx. 5 MB</p>
+                                    <button type="button" class="btn btn-outline-primary btn-sm" id="btnChoose">
+                                        <i class="bi bi-folder2-open me-1"></i>Escolher arquivo
+                                    </button>
                                 </div>
-                                <button class="btn btn-sm btn-outline-danger mt-2" onclick="tryActivateCamera()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Tentar novamente
-                                </button>
+
+                                {{-- Preview da foto selecionada --}}
+                                <div id="previewWrapper">
+                                    <img id="photoPreview" src="" alt="Preview da foto">
+                                    <div id="previewOverlay">
+                                        <button type="button" class="btn btn-light btn-sm" id="btnChange">
+                                            <i class="bi bi-arrow-repeat me-1"></i>Trocar foto
+                                        </button>
+                                    </div>
+                                </div>
+
                             </div>
-                        </div>
 
-                        {{-- Status em tempo real --}}
-                        <div class="d-flex align-items-center mb-4" id="statusBar">
-                            <span class="status-dot ready" id="statusDot"></span>
-                            <span id="statusText" class="small text-muted">Clique em "Ativar Câmera" para começar</span>
-                        </div>
+                            {{-- Input file oculto --}}
+                            <input type="file" id="photoInput" name="photo"
+                                   accept="image/jpeg,image/png,image/webp">
 
-                        {{-- Botões de ação --}}
-                        <div class="d-flex gap-2 flex-wrap">
-                            {{-- Botão 1: Ativar câmera --}}
-                            <button type="button"
-                                    id="btnActivate"
-                                    class="btn btn-outline-primary d-flex align-items-center gap-2">
-                                <i class="bi bi-camera-video-fill"></i>
-                                Ativar Câmera
-                            </button>
+                            {{-- Nome do arquivo selecionado --}}
+                            <div id="fileInfo" class="small text-muted mb-3" style="display:none">
+                                <i class="bi bi-paperclip me-1"></i>
+                                <span id="fileName"></span>
+                                <span id="fileSize" class="ms-2 text-secondary"></span>
+                            </div>
 
-                            {{-- Botão 2: Capturar (aparece após câmera ativa) --}}
-                            <form action="{{ route('biometric.store', $student->id) }}"
-                                  method="POST"
-                                  id="captureForm">
-                                @csrf
-                                <button type="button"
-                                        id="btnCapture"
+                            {{-- Status em tempo real --}}
+                            <div class="d-flex align-items-center mb-4">
+                                <span class="status-dot idle" id="statusDot"></span>
+                                <span id="statusText" class="small text-muted">Selecione uma foto para começar</span>
+                            </div>
+
+                            {{-- Botões --}}
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="submit"
+                                        id="btnSubmit"
                                         class="btn btn-primary d-flex align-items-center gap-2"
                                         disabled>
-                                    <i class="bi bi-camera-fill"></i>
-                                    {{ $enrolled ? 'Recapturar Biometria' : 'Capturar Biometria' }}
+                                    <i class="bi bi-cloud-check-fill"></i>
+                                    {{ $enrolled ? 'Atualizar Biometria' : 'Cadastrar Biometria' }}
                                 </button>
-                            </form>
 
-                            <a href="{{ route('biometric.index') }}"
-                               class="btn btn-outline-secondary d-flex align-items-center gap-1">
-                                <i class="bi bi-x-lg"></i> Cancelar
-                            </a>
-                        </div>
+                                <a href="{{ route('biometric.index') }}"
+                                   class="btn btn-outline-secondary d-flex align-items-center gap-1">
+                                    <i class="bi bi-x-lg"></i> Cancelar
+                                </a>
+                            </div>
+
+                        </form>
 
                     </div>
                 </div>
             </div>
 
-            {{-- Painel lateral: instruções + steps --}}
+            {{-- Painel lateral --}}
             <div class="col-lg-4">
 
                 {{-- Instruções --}}
@@ -278,34 +267,42 @@
                             <i class="bi bi-info-circle me-1"></i>Como funciona
                         </h6>
                         <ol class="ps-3 small text-muted" style="line-height:1.8">
-                            <li>Clique em <strong>Ativar Câmera</strong> para ver o feed ao vivo</li>
-                            <li>Posicione o aluno em frente à câmera</li>
-                            <li>Aguarde a <span class="text-success fw-semibold">borda verde</span> indicar rosto detectado</li>
-                            <li>Clique em <strong>Capturar Biometria</strong></li>
+                            <li>Selecione ou arraste uma <strong>foto do aluno</strong></li>
+                            <li>A foto deve mostrar o rosto <strong>de frente e bem iluminado</strong></li>
+                            <li>Verifique o preview antes de enviar</li>
+                            <li>Clique em <strong>Cadastrar Biometria</strong></li>
                             <li>O Python extrai os pontos faciais (MediaPipe)</li>
-                            <li>A biometria é salva no banco de dados</li>
+                            <li>A biometria é salva e a foto é <strong>descartada</strong></li>
                         </ol>
                     </div>
                 </div>
 
-                {{-- Legenda do stream --}}
+                {{-- Dicas de foto boa --}}
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-body py-3">
-                        <h6 class="fw-bold mb-2" style="color:var(--primary-color); font-size:0.85rem">
-                            <i class="bi bi-palette me-1"></i>Legenda do vídeo
+                        <h6 class="fw-bold mb-2" style="color:var(--primary-color);font-size:.85rem">
+                            <i class="bi bi-lightbulb me-1"></i>Dicas para melhor resultado
                         </h6>
                         <div class="d-flex flex-column gap-2 small">
-                            <div class="d-flex align-items-center gap-2">
-                                <div style="width:14px;height:14px;border:2px solid #22c55e;border-radius:2px;flex-shrink:0"></div>
-                                <span class="text-muted">Borda verde — rosto detectado</span>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+                                <span class="text-muted">Rosto centralizado e visível</span>
                             </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <div style="width:14px;height:14px;border:2px solid #f97316;border-radius:2px;flex-shrink:0"></div>
-                                <span class="text-muted">Borda laranja — sem rosto</span>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+                                <span class="text-muted">Boa iluminação, sem contra-luz</span>
                             </div>
-                            <div class="d-flex align-items-center gap-2">
-                                <div style="width:14px;height:14px;background:rgba(255,255,255,0.2);border-radius:2px;flex-shrink:0"></div>
-                                <span class="text-muted">Malha facial — landmarks MediaPipe</span>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1 flex-shrink-0"></i>
+                                <span class="text-muted">Expressão neutra, olhos abertos</span>
+                            </div>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-x-circle-fill text-danger mt-1 flex-shrink-0"></i>
+                                <span class="text-muted">Evite óculos escuros ou máscara</span>
+                            </div>
+                            <div class="d-flex align-items-start gap-2">
+                                <i class="bi bi-x-circle-fill text-danger mt-1 flex-shrink-0"></i>
+                                <span class="text-muted">Evite fotos em grupo</span>
                             </div>
                         </div>
                     </div>
@@ -318,32 +315,32 @@
                             <i class="bi bi-list-check me-1"></i>Progresso
                         </h6>
                         <div class="d-flex flex-column gap-3" id="stepsList">
-                            <div class="step-item active" data-step="1">
+                            <div class="step-item done" data-step="1">
                                 <div class="step-icon">1</div>
                                 <div>
                                     <div class="fw-semibold small">Aluno selecionado</div>
-                                    <div class="text-muted" style="font-size:0.75rem">{{ $student->name }}</div>
+                                    <div class="text-muted" style="font-size:.75rem">{{ $student->name }}</div>
                                 </div>
                             </div>
                             <div class="step-item" data-step="2" id="step2">
                                 <div class="step-icon">2</div>
                                 <div>
-                                    <div class="fw-semibold small">Câmera ao vivo</div>
-                                    <div class="text-muted" style="font-size:0.75rem">Stream MJPEG / FastAPI</div>
+                                    <div class="fw-semibold small">Foto selecionada</div>
+                                    <div class="text-muted" style="font-size:.75rem">JPG, PNG ou WEBP</div>
                                 </div>
                             </div>
                             <div class="step-item" data-step="3" id="step3">
                                 <div class="step-icon">3</div>
                                 <div>
-                                    <div class="fw-semibold small">Extração de landmarks</div>
-                                    <div class="text-muted" style="font-size:0.75rem">MediaPipe Face Mesh</div>
+                                    <div class="fw-semibold small">Envio ao servidor</div>
+                                    <div class="text-muted" style="font-size:.75rem">Python processa a imagem</div>
                                 </div>
                             </div>
                             <div class="step-item" data-step="4" id="step4">
                                 <div class="step-icon">4</div>
                                 <div>
-                                    <div class="fw-semibold small">Salvar biometria</div>
-                                    <div class="text-muted" style="font-size:0.75rem">Persistir no banco</div>
+                                    <div class="fw-semibold small">Biometria salva</div>
+                                    <div class="text-muted" style="font-size:.75rem">Persistida no banco</div>
                                 </div>
                             </div>
                         </div>
@@ -360,26 +357,29 @@
 <script>
 $(document).ready(function () {
 
-    const STREAM_URL    = 'http://localhost:8001/stream';
-    const HEALTH_URL    = 'http://localhost:8001/health';
+    const $dropZone       = $('#dropZone');
+    const $input          = $('#photoInput');
+    const $btnChoose      = $('#btnChoose');
+    const $btnChange      = $('#btnChange');
+    const $btnSubmit      = $('#btnSubmit');
+    const $placeholder    = $('#dropPlaceholder');
+    const $previewWrapper = $('#previewWrapper');
+    const $preview        = $('#photoPreview');
+    const $fileInfo       = $('#fileInfo');
+    const $fileName       = $('#fileName');
+    const $fileSize       = $('#fileSize');
+    const $statusDot      = $('#statusDot');
+    const $statusText     = $('#statusText');
+    const $faceBadge      = $('#faceBadge');
+    const $form           = $('#enrollForm');
 
-    const $btnActivate  = $('#btnActivate');
-    const $btnCapture   = $('#btnCapture');
-    const $form         = $('#captureForm');
-    const $scanLine     = $('#scanLine');
-    const $placeholder  = $('#camera-placeholder');
-    const $connecting   = $('#camera-connecting');
-    const $errorBox     = $('#camera-error');
-    const $stream       = $('#cameraStream');
-    const $liveBadge    = $('#liveBadge');
-    const $dot          = $('#statusDot');
-    const $status       = $('#statusText');
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    const ALLOWED   = ['image/jpeg', 'image/png', 'image/webp'];
 
-    let cameraActive = false;
-
+    // ── Helpers ─────────────────────────────────────────────────────────────
     function setStatus(type, text) {
-        $dot.attr('class', 'status-dot ' + type);
-        $status.text(text);
+        $statusDot.attr('class', 'status-dot ' + type);
+        $statusText.text(text);
     }
 
     function activateStep(n) {
@@ -391,71 +391,105 @@ $(document).ready(function () {
         });
     }
 
-    // ── Ativar câmera ────────────────────────────────────────────────────────
-    window.tryActivateCamera = function () {
-        $placeholder.hide();
-        $errorBox.hide();
-        $connecting.show();
-        setStatus('loading', 'Verificando serviço Python...');
-
-        // Testa o /health antes de tentar o stream
-        $.get(HEALTH_URL)
-            .done(function () {
-                showStream();
-            })
-            .fail(function () {
-                $connecting.hide();
-                $errorBox.show();
-                setStatus('error', 'Serviço Python offline (porta 8001)');
-            });
-    };
-
-    function showStream() {
-        // Carrega o MJPEG no img tag
-        $stream.attr('src', STREAM_URL);
-
-        $stream.on('load', function () {
-            // stream começou a chegar
-        });
-
-        // Pequeno delay para garantir que o stream começou
-        setTimeout(function () {
-            $connecting.hide();
-            $stream.show();
-            $liveBadge.css('display', 'flex');
-            $btnCapture.prop('disabled', false);
-            $btnActivate.prop('disabled', true)
-                        .html('<i class="bi bi-camera-video-fill me-1"></i>Câmera ativa');
-            cameraActive = true;
-            activateStep(2);
-            setStatus('live', 'Câmera ao vivo — posicione o aluno');
-        }, 1200);
+    function formatBytes(bytes) {
+        return bytes < 1024 * 1024
+            ? (bytes / 1024).toFixed(0) + ' KB'
+            : (bytes / (1024 * 1024)).toFixed(2) + ' MB';
     }
 
-    $btnActivate.on('click', function () {
-        tryActivateCamera();
+    // ── Processar arquivo selecionado ────────────────────────────────────────
+    function processFile(file) {
+        // Valida tipo
+        if (!ALLOWED.includes(file.type)) {
+            setStatus('error', 'Tipo de arquivo inválido. Use JPG, PNG ou WEBP.');
+            return;
+        }
+
+        // Valida tamanho
+        if (file.size > MAX_BYTES) {
+            setStatus('error', `Arquivo muito grande (${formatBytes(file.size)}). Máximo: 5 MB.`);
+            return;
+        }
+
+        // Preview
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            $preview.attr('src', e.target.result);
+            $placeholder.hide();
+            $previewWrapper.show();
+            $dropZone.addClass('has-preview');
+            $faceBadge.fadeIn(200);
+
+            // Info
+            $fileName.text(file.name);
+            $fileSize.text('· ' + formatBytes(file.size));
+            $fileInfo.show();
+
+            // Habilitar envio
+            $btnSubmit.prop('disabled', false);
+            setStatus('ok', 'Foto pronta para envio — verifique o preview');
+            activateStep(2);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // ── Drag & Drop ──────────────────────────────────────────────────────────
+    $dropZone.on('dragover', function (e) {
+        e.preventDefault();
+        $(this).addClass('drag-over');
     });
 
-    // ── Capturar biometria ───────────────────────────────────────────────────
-    $btnCapture.on('click', function () {
-        if (!cameraActive) return;
+    $dropZone.on('dragleave drop', function () {
+        $(this).removeClass('drag-over');
+    });
 
-        $btnCapture.prop('disabled', true)
-                   .html('<span class="spinner-border spinner-border-sm me-2"></span>Capturando...');
-        $scanLine.show();
-        setStatus('loading', 'Capturando landmarks faciais...');
+    $dropZone.on('drop', function (e) {
+        e.preventDefault();
+        const file = e.originalEvent.dataTransfer.files[0];
+        if (file) {
+            // Injeta no input para o form enviar
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            $input[0].files = dt.files;
+            processFile(file);
+        }
+    });
+
+    // ── Clique na dropzone / botão escolher ─────────────────────────────────
+    $dropZone.on('click', function (e) {
+        if (!$(e.target).is('#btnChange, #btnSubmit')) {
+            $input.trigger('click');
+        }
+    });
+
+    $btnChoose.on('click', function (e) {
+        e.stopPropagation();
+        $input.trigger('click');
+    });
+
+    $btnChange.on('click', function (e) {
+        e.stopPropagation();
+        $input.trigger('click');
+    });
+
+    $input.on('change', function () {
+        const file = this.files[0];
+        if (file) processFile(file);
+    });
+
+    // ── Submissão do formulário ──────────────────────────────────────────────
+    $form.on('submit', function () {
+        $btnSubmit.prop('disabled', true)
+                  .html('<span class="spinner-border spinner-border-sm me-2"></span>Enviando...');
+        setStatus('loading', 'Enviando foto para processamento...');
         activateStep(3);
 
+        // Após um tick visual, deixa o form submeter normalmente
         setTimeout(function () {
-            setStatus('loading', 'Salvando biometria...');
             activateStep(4);
-
-            // Para o stream antes de submeter (evita conexão pendente)
-            $stream.attr('src', '');
-
-            $form.submit();
-        }, 1500);
+        }, 500);
     });
+
 });
 </script>
 @endsection

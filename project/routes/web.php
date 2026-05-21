@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuthController;
+ use App\Http\Controllers\AttendanceController;
 use App\Http\Controllers\RelatorioController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SchoolController;
@@ -78,4 +79,8 @@ Route::middleware('auth')->prefix('/home')
         Route::get('/exportar/{format}','exportar')->name('exportar');
     });
 
-
+Route::middleware('auth')->prefix('/frequencia')
+    ->controller(AttendanceController::class)->name('frequencia.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/capturar', 'capture')->name('capturar');
+    });

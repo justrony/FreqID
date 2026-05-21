@@ -55,7 +55,7 @@ class FaceScanController extends Controller
         $validated = $request->validate([
             'student_id'    => ['required', 'integer', 'exists:students,id'],
             'landmark_hash' => ['required', 'string', 'size:64'],
-            'landmarks'     => ['nullable', 'array'],
+            'landmarks'     => ['nullable', 'array'],   
         ]);
 
         $student = Student::findOrFail($validated['student_id']);

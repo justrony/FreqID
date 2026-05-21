@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\Biometric\BiometricRegistrar;
 use App\Services\Biometric\CaptureDriver;
+use App\Services\Biometric\PhotoUploadDriver;
 use App\Services\Biometric\PythonCameraDriver;
 use Illuminate\Support\ServiceProvider;
 
@@ -24,6 +25,13 @@ class AppServiceProvider extends ServiceProvider
                 driver: $app->make(CaptureDriver::class),
             );
         });
+
+        $this->app->bind(PhotoUploadDriver::class, function () {
+            return new PhotoUploadDriver(
+                baseUrl:        config('services.freqid_scanner.url', 'http://localhost:8001'),
+                timeoutSeconds: config('services.freqid_scanner.timeout', 15),
+            );
+        });
     }
 
     /**
@@ -34,3 +42,4 @@ class AppServiceProvider extends ServiceProvider
         //
     }
 }
+

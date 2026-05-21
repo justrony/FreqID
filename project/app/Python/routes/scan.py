@@ -1,18 +1,22 @@
 """
 routes/scan.py
-Endpoint /scan — captura frame, extrai landmarks e registra presença via Laravel.
+Endpoints de captura facial:
+  - POST /scan          : captura + envia ao Laravel (fluxo legado)
+  - POST /capture-hash  : captura e retorna apenas o hash (novo fluxo via proxy Laravel)
 """
 import logging
 
 import cv2
 import numpy as np
 from fastapi import APIRouter, HTTPException, Request
+from pydantic import BaseModel
+from scipy.spatial import procrustes
 
 from ..config import LANDMARK_ROUND_DECIMALS, LARAVEL_FACE_SCAN_URL
 from ..hashing import generate_landmark_hash
 from ..http_client import LaravelRequestError, send_to_laravel
 from ..scanner import FreqIDScanner
-from ..schemas import ScanRequest
+from ..schemas import ScanRequest, MatchRequest
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["scan"])
@@ -23,6 +27,7 @@ def scan(req: ScanRequest, request: Request) -> dict:
     """
     Captura um frame, extrai landmarks, gera hash e envia ao Laravel.
     O Laravel identifica o aluno pelo hash e registra a presença na turma (class_id).
+    Mantido para compatibilidade com o fluxo legado.
     """
     cap: cv2.VideoCapture | None = request.app.state.cap
     scanner: FreqIDScanner = request.app.state.scanner
@@ -52,6 +57,29 @@ def scan(req: ScanRequest, request: Request) -> dict:
     }
 
 
+@router.post("/capture-hash")
+def capture_hash(request: Request) -> dict:
+    """
+    Captura um frame da câmera, extrai landmarks e retorna os landmarks (além do hash).
+    NÃO envia para o Laravel — o chamador (proxy Laravel) cuida disso.
+
+    Usado pelo fluxo: Browser → Laravel POST /frequencia/capturar → Python POST /capture-hash
+    """
+    cap: cv2.VideoCapture | None = request.app.state.cap
+    scanner: FreqIDScanner = request.app.state.scanner
+
+    landmarks_array = _capture_landmarks(cap, scanner)
+    landmark_hash = generate_landmark_hash(landmarks_array)
+    landmarks_list: list = np.round(landmarks_array, decimals=LANDMARK_ROUND_DECIMALS).tolist()
+
+    logger.info("Landmarks capturados via /capture-hash", extra={"hash": landmark_hash})
+    return {
+        "landmark_hash": landmark_hash,
+        "landmarks_count": int(landmarks_array.shape[0]),
+        "landmarks": landmarks_list,
+    }
+
+
 def _capture_landmarks(
     cap: cv2.VideoCapture | None,
     scanner: FreqIDScanner,
@@ -69,3 +97,44 @@ def _capture_landmarks(
         raise HTTPException(status_code=404, detail="Nenhum rosto detectado no frame")
 
     return landmarks_array
+
+
+@router.post("/match")
+def match_face(req: MatchRequest) -> dict:
+    """
+    Compara os landmarks recém capturados com a lista de rostos salvos usando Análise de Procrustes.
+    A Análise de Procrustes encontra a melhor transformação (translação, escala e rotação)
+    para sobrepor as duas matrizes e retorna o erro (disparity).
+    """
+    if not req.registered_faces:
+        raise HTTPException(status_code=400, detail="Nenhum rosto registrado fornecido para comparação.")
+
+    live_matrix = np.array(req.live_landmarks)
+    if live_matrix.shape != (478, 3):
+        raise HTTPException(status_code=400, detail="live_landmarks deve ter shape (478, 3).")
+
+    best_face_id = None
+    min_disparity = float('inf')
+
+    for face in req.registered_faces:
+        face_matrix = np.array(face.landmarks)
+        if face_matrix.shape != (478, 3):
+            continue
+
+        try:
+            # procrustes retorna: mt1, mt2, disparity
+            _, _, disparity = procrustes(live_matrix, face_matrix)
+            
+            if disparity < min_disparity:
+                min_disparity = disparity
+                best_face_id = face.face_id
+        except Exception as e:
+            logger.warning(f"Erro no procrustes para face_id {face.face_id}: {str(e)}")
+            continue
+
+    logger.info("Match via Procrustes", extra={"best_face_id": best_face_id, "disparity": min_disparity})
+
+    return {
+        "best_face_id": best_face_id,
+        "disparity": min_disparity,
+    }

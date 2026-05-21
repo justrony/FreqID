@@ -2,10 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreEnrollmentRequest;
 use App\Services\Biometric\CaptureException;
 use App\Services\BiometricEnrollmentService;
 use Illuminate\Auth\Access\AuthorizationException;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 class BiometricEnrollmentController extends Controller
@@ -15,7 +15,7 @@ class BiometricEnrollmentController extends Controller
     ) {}
 
     /**
-     * Exibe a tela de cadastro facial — lista os alunos do professor.
+     * lista os alunos do professor.
      */
     public function index()
     {
@@ -24,7 +24,7 @@ class BiometricEnrollmentController extends Controller
     }
 
     /**
-     * Exibe o painel de captura para um aluno específico.
+     * Upload de foto para um aluno específico.
      */
     public function show(int $studentId)
     {
@@ -36,27 +36,30 @@ class BiometricEnrollmentController extends Controller
     }
 
     /**
-     * Dispara o processo de cadastro da biometria para o aluno.
-     * O BiometricRegistrar (Bridge) delega ao driver Python a captura real.
+     * Processa o upload da foto e cadastra a biometria do aluno.
      */
-    public function store(Request $request, int $studentId)
+    public function store(StoreEnrollmentRequest $request, int $studentId)
     {
         try {
-            $faceFeature = $this->enrollmentService->enroll($studentId, auth()->id());
+            $faceFeature = $this->enrollmentService->enrollFromPhoto(
+                $studentId,
+                auth()->id(),
+                $request->file('photo'),
+            );
 
             return redirect()
                 ->route('biometric.index')
-                ->with('success', "Biometria do aluno cadastrada com sucesso! (ID #{$faceFeature->id})");
+                ->with('success', "Biometria do aluno cadastrada com sucesso!");
 
         } catch (AuthorizationException $e) {
             return redirect()->back()->with('error', $e->getMessage());
 
         } catch (CaptureException $e) {
-            Log::warning('[BiometricEnrollmentController] Falha na captura', [
+            Log::warning('Falha no processamento da imagem', [
                 'student_id' => $studentId,
                 'error'      => $e->getMessage(),
             ]);
-            return redirect()->back()->with('error', "Falha na captura: {$e->getMessage()}");
+            return redirect()->back()->with('error', "Falha ao processar a imagem");
 
         } catch (\Throwable $e) {
             Log::error('[BiometricEnrollmentController] Erro inesperado', [
@@ -67,3 +70,4 @@ class BiometricEnrollmentController extends Controller
         }
     }
 }
+

@@ -20,7 +20,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .config import CAMERA_INDEX
 from .scanner import FreqIDScanner
-from .routes import health, scan, register, stream
+from .routes import health, scan, register, stream, enroll
 
 # ---------------------------------------------------------------------------
 # Logging estruturado — zero prints em produção
@@ -87,4 +87,5 @@ app.add_middleware(
 app.include_router(health.router)
 app.include_router(stream.router)
 app.include_router(scan.router)
-app.include_router(register.router)
+app.include_router(register.router)          # legado — manter por compatibilidade
+app.include_router(enroll.router)            # novo — cadastro via upload de imagem
