@@ -31,28 +31,28 @@
     #cameraOffline i { font-size: 3rem; }
 
     /* ── Live badge ───────────────────────────────────────────── */
-    .live-badge {
-        position: absolute;
-        top: 14px; left: 14px;
-        background: rgba(239,68,68,.9);
-        color: #fff;
-        font-size: .68rem;
-        font-weight: 700;
-        letter-spacing: 1px;
-        padding: 4px 10px;
-        border-radius: 20px;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        z-index: 5;
-    }
-    .live-dot {
-        width: 8px; height: 8px;
-        background: #fff;
-        border-radius: 50%;
-        animation: blink 1s infinite;
-    }
-    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }
+    /*.live-badge {*/
+    /*    position: absolute;*/
+    /*    top: 14px; left: 14px;*/
+    /*    background: rgba(239,68,68,.9);*/
+    /*    color: #fff;*/
+    /*    font-size: .68rem;*/
+    /*    font-weight: 700;*/
+    /*    letter-spacing: 1px;*/
+    /*    padding: 4px 10px;*/
+    /*    border-radius: 20px;*/
+    /*    display: flex;*/
+    /*    align-items: center;*/
+    /*    gap: 6px;*/
+    /*    z-index: 5;*/
+    /*}*/
+    /*.live-dot {*/
+    /*    width: 8px; height: 8px;*/
+    /*    background: #fff;*/
+    /*    border-radius: 50%;*/
+    /*    animation: blink 1s infinite;*/
+    /*}*/
+    /*@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.2} }*/
 
     /* ── Result panel ─────────────────────────────────────────── */
     #resultPanel {
@@ -134,7 +134,6 @@
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-body p-3">
                         <div class="camera-wrapper mb-3">
-                            <span class="live-badge"><span class="live-dot"></span> AO VIVO</span>
 
                             <div class="capture-loading" id="captureLoading">
                                 <div class="spinner-border"></div>
