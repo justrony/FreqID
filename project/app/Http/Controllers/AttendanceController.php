@@ -123,7 +123,8 @@ class AttendanceController extends Controller
         $bestFaceId = $matchData['best_face_id'] ?? null;
         $disparity = $matchData['disparity'] ?? 999.0;
 
-        $threshold = 0.05;
+
+        $threshold = 0.08;
 
         if (!$bestFaceId || $disparity > $threshold) {
             Log::info('[AttendanceController] Reconhecimento falhou (Procrustes)', ['disparity' => $disparity, 'threshold' => $threshold]);
