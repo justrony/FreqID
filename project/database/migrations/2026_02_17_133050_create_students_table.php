@@ -17,6 +17,10 @@ return new class extends Migration
             $table->foreignId('class_id')->constrained('classes');
             $table->string('name');
             $table->string('registration')->unique();
+            $table->string('cpf')->unique();
+            $table->string('nome_mae');
+            $table->string('nome_pai')->nullable();
+            $table->date('data_nascimento');
             $table->timestamps();
         });
     }

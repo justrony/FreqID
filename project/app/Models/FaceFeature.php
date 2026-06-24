@@ -11,7 +11,6 @@ class FaceFeature extends Model
 
     protected $fillable = [
         'student_id',
-        'landmark_hash',
         'embedding',
         'image_path',
     ];
@@ -28,4 +27,3 @@ class FaceFeature extends Model
         return $this->belongsTo(Student::class);
     }
 }
-

@@ -9,7 +9,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="m-0 fw-bold" style="color: var(--primary-color)">
-                    <i class="bi bi-speedometer2 me-2"></i>Dashboard de Frequência
+                    Dashboard de Frequência
                 </h5>
                 <p class="m-0 small text-muted">
                     @if($isSchoolUser)
@@ -38,7 +38,6 @@
 
     <div class="p-4" style="background: #f0f4f8; min-height: calc(100vh - 61px);">
 
-        {{-- ════ BANNER CONTEXTO (só para usuário de escola) ════ --}}
         @if($isSchoolUser)
         <div class="alert d-flex align-items-center gap-3 mb-4 border-0 shadow-sm" style="background:linear-gradient(135deg,#0176bc15,#0176bc08);border-left:4px solid #0176bc !important;border-radius:12px">
             <div class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;background:#0176bc15">

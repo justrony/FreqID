@@ -25,6 +25,13 @@ class AttendanceSeeder extends Seeder
             ]));
         }
 
+        // NOVO: Vincula todos os usuários às escolas criadas, assim como o StudentSeeder faz
+        // Isso garante que os usuários (como o Teste2) consigam ver os gráficos dessas 3 escolas
+        $users = \App\Models\User::all();
+        foreach ($users as $user) {
+            $user->schools()->syncWithoutDetaching($schoolIds);
+        }
+
         // 2. Turmas por escola
         $classNames = ['1º Ano A', '1º Ano B', '2º Ano A', '2º Ano B', '3º Ano A'];
         $classIds = [];
@@ -60,20 +67,23 @@ class AttendanceSeeder extends Seeder
                 foreach ($selected as $firstName) {
                     $lastName  = collect(['Silva', 'Santos', 'Oliveira', 'Souza', 'Lima', 'Pereira', 'Costa', 'Ferreira'])->random();
                     $studentIds[$classId][] = DB::table('students')->insertGetId([
-                        'school_id'    => $schoolId,
-                        'class_id'     => $classId,
-                        'name'         => "{$firstName} {$lastName}",
-                        'registration' => 'MAT' . str_pad(++$regCounter, 5, '0', STR_PAD_LEFT),
-                        'created_at'   => now(),
-                        'updated_at'   => now(),
+                        'school_id'       => $schoolId,
+                        'class_id'        => $classId,
+                        'name'            => "{$firstName} {$lastName}",
+                        'registration'    => 'MAT' . str_pad(++$regCounter, 5, '0', STR_PAD_LEFT),
+                        'cpf'             => str_pad($regCounter, 11, '0', STR_PAD_LEFT),
+                        'nome_mae'        => "Mãe do(a) {$firstName}",
+                        'data_nascimento' => now()->subYears(15)->format('Y-m-d'), // ~15 anos
+                        'created_at'      => now(),
+                        'updated_at'      => now(),
                     ]);
                 }
             }
         }
 
-        // 4. Presenças
-        $attendances = [];
-        $now         = Carbon::now();
+        // 4. Presenças — insere em lotes de 500 para não estourar memória
+        $buffer = [];
+        $now    = Carbon::now();
 
         foreach ($studentIds as $classId => $ids) {
             foreach ($ids as $studentId) {
@@ -83,17 +93,14 @@ class AttendanceSeeder extends Seeder
                     $monthStart = $now->copy()->subMonths($m)->startOfMonth();
                     $monthEnd   = $now->copy()->subMonths($m)->endOfMonth();
 
-                    // Dias úteis do mês
                     $day = $monthStart->copy();
                     while ($day->lte($monthEnd)) {
                         if ($day->isWeekday()) {
-                            if ((mt_rand(0, 100) / 100) <= $presenceRate) {
-                                $status = 'presente';
-                            } else {
-                                $status = 'ausente';
-                            }
+                            $status = ((mt_rand(0, 100) / 100) <= $presenceRate)
+                                ? 'presente'
+                                : 'ausente';
 
-                            $attendances[] = [
+                            $buffer[] = [
                                 'student_id'       => $studentId,
                                 'class_id'         => $classId,
                                 'marked_at'        => $day->copy()->setTime(7, mt_rand(30, 59)),
@@ -102,6 +109,12 @@ class AttendanceSeeder extends Seeder
                                 'created_at'       => now(),
                                 'updated_at'       => now(),
                             ];
+
+                            // Flush a cada 500 registros
+                            if (count($buffer) >= 500) {
+                                DB::table('attendances')->insert($buffer);
+                                $buffer = [];
+                            }
                         }
                         $day->addDay();
                     }
@@ -109,9 +122,9 @@ class AttendanceSeeder extends Seeder
             }
         }
 
-        //chunks 
-        foreach (array_chunk($attendances, 500) as $chunk) {
-            DB::table('attendances')->insert($chunk);
+        // Insere registros restantes
+        if (!empty($buffer)) {
+            DB::table('attendances')->insert($buffer);
         }
     }
 }

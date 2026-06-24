@@ -14,6 +14,14 @@ class Student extends Model
         'class_id',
         'name',
         'registration',
+        'cpf',
+        'nome_mae',
+        'nome_pai',
+        'data_nascimento',
+    ];
+
+    protected $casts = [
+        'data_nascimento' => 'date',
     ];
 
     public function school()

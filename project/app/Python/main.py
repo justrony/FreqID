@@ -1,14 +1,3 @@
-"""
-main.py
-Entrypoint do FreqID Python service.
-
-Responsabilidade ÚNICA: montar a aplicação FastAPI, registrar middlewares,
-configurar o ciclo de vida (câmera) e incluir os routers.
-Toda lógica de negócio vive em módulos específicos.
-
-Para iniciar:
-    uvicorn app.Python.main:app --host 0.0.0.0 --port 8001
-"""
 import logging
 import logging.config
 from contextlib import asynccontextmanager
@@ -19,12 +8,10 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from .config import CAMERA_INDEX
+from .deepface_engine import DeepFaceEngine
 from .scanner import FreqIDScanner
 from .routes import health, scan, register, stream, enroll
 
-# ---------------------------------------------------------------------------
-# Logging estruturado — zero prints em produção
-# ---------------------------------------------------------------------------
 logging.config.dictConfig(
     {
         "version": 1,
@@ -47,9 +34,6 @@ logging.config.dictConfig(
 logger = logging.getLogger(__name__)
 
 
-# ---------------------------------------------------------------------------
-# Lifespan: abre e fecha a câmera junto com o processo
-# ---------------------------------------------------------------------------
 @asynccontextmanager
 async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Iniciando câmera", extra={"index": CAMERA_INDEX})
@@ -60,6 +44,10 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
     application.state.cap = cap
     application.state.scanner = FreqIDScanner()
 
+    deepface = DeepFaceEngine()
+    deepface.warmup()
+    application.state.deepface = deepface
+
     yield
 
     logger.info("Encerrando câmera")
@@ -67,25 +55,21 @@ async def lifespan(application: FastAPI) -> AsyncGenerator[None, None]:
         cap.release()
 
 
-# ---------------------------------------------------------------------------
-# Aplicação
-# ---------------------------------------------------------------------------
 app = FastAPI(
     title="FreqID Scanner",
-    version="1.0.0",
+    version="2.0.0",
     lifespan=lifespan,
 )
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Permitindo todas as origens localmente (freqid.test, localhost, 127.0.0.1)
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Routers
 app.include_router(health.router)
 app.include_router(stream.router)
 app.include_router(scan.router)
-app.include_router(register.router)          # legado — manter por compatibilidade
-app.include_router(enroll.router)            # novo — cadastro via upload de imagem
+app.include_router(register.router)
+app.include_router(enroll.router)

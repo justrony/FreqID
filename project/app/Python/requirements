@@ -4,4 +4,7 @@ numpy
 fastapi
 uvicorn
 requests
-python-multipart 
+python-multipart
+deepface
+tf-keras
+scipy

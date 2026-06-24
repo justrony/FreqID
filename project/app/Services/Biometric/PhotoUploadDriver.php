@@ -14,13 +14,6 @@ class PhotoUploadDriver
         private readonly int    $timeoutSeconds = 15,
     ) {}
 
-    /**
-     * Envia a foto ao Python e retorna os dados biométricos extraídos.
-     *
-     * @return array{ landmark_hash: string, landmarks: array<array<float>> }
-     *
-     * @throws CaptureException
-     */
     public function captureFromPhoto(int $studentId, UploadedFile $photo): array
     {
         try {
@@ -42,19 +35,16 @@ class PhotoUploadDriver
 
             $data = $response->json();
 
-            if (empty($data['landmark_hash'])) {
+            if (empty($data['embedding'])) {
                 throw new CaptureException('Resposta inválida do serviço de processamento de imagem.');
             }
 
-            Log::info('[PhotoUploadDriver] Landmarks extraídos via upload', [
-                'student_id'       => $studentId,
-                'landmark_hash'    => $data['landmark_hash'],
-                'landmarks_count'  => $data['landmarks_count'] ?? null,
+            Log::info('[PhotoUploadDriver] Embedding extraído via upload', [
+                'student_id' => $studentId,
             ]);
 
             return [
-                'landmark_hash' => $data['landmark_hash'],
-                'landmarks'     => $data['landmarks'] ?? [],
+                'embedding' => $data['embedding'],
             ];
 
         } catch (CaptureException $e) {

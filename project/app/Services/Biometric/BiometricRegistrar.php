@@ -13,19 +13,9 @@ class BiometricRegistrar
         private readonly CaptureDriver $driver,
     ) {}
 
-    /**
-     *
-     * @param  int   $studentId
-     * @param  int   $userId
-     * @return FaceFeature
-     *
-     * @throws CaptureException
-     * @throws \Illuminate\Auth\Access\AuthorizationException
-     */
     public function register(int $studentId, int $userId): FaceFeature
     {
         $student = Student::findOrFail($studentId);
-
 
         $user = \App\Models\User::find($userId);
 
@@ -45,14 +35,12 @@ class BiometricRegistrar
             );
         }
 
-
         $captureData = $this->driver->capture($studentId);
 
         $faceFeature = FaceFeature::updateOrCreate(
             ['student_id' => $studentId],
             [
-                'landmark_hash' => $captureData['landmark_hash'],
-                'embedding'     => $captureData['landmarks'] ?? null,
+                'embedding' => $captureData['embedding'],
             ]
         );
 
@@ -60,7 +48,6 @@ class BiometricRegistrar
             'student_id'    => $studentId,
             'registered_by' => $userId,
             'face_id'       => $faceFeature->id,
-            'driver'        => get_class($this->driver),
         ]);
 
         return $faceFeature;

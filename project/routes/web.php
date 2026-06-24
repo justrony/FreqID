@@ -21,6 +21,10 @@ Route::get('/auth/token', [AuthController::class, 'apiToken'])->middleware('auth
 
 Route::middleware('auth')->group(function () {
 
+    Route::get('/home/alunos', function () {
+        return view('components.quick-access.qa-alunos');
+    })->name('alunos');
+
     Route::get('/home/turmas', function () {
         return view('components.quick-access.qa-turmas');
     })->name('turmas');
@@ -64,6 +68,16 @@ Route::middleware(['auth','can:access-admin'])->prefix('/usuarios')
         Route::get('/{schoolClass}/edit', 'edit')->name('edit');
         Route::put('/{schoolClass}/update', 'update')->name('update');
         Route::delete('/{schoolClass}/delete', 'destroy')->name('destroy');
+    });
+
+    Route::middleware(['auth'])->prefix('/alunos')
+    ->controller(\App\Http\Controllers\StudentController::class)->name('aluno.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/create', 'create')->name('create');
+        Route::post('/store', 'store')->name('store');
+        Route::get('/{aluno}/edit', 'edit')->name('edit');
+        Route::put('/{aluno}/update', 'update')->name('update');
+        Route::delete('/{aluno}/delete', 'destroy')->name('destroy');
     });
 
     Route::middleware(['auth'])->prefix('/biometria')

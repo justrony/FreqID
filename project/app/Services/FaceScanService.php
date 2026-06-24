@@ -10,13 +10,11 @@ class FaceScanService
     public function storeFaceScan(array $data): FaceFeature
     {
         $faceFeature = FaceFeature::create([
-            'landmark_hash' => $data['landmark_hash'],
-            'embedding'     => $data['landmarks'] ?? null,
+            'embedding' => $data['embedding'] ?? null,
         ]);
 
         Log::info('FaceScan armazenado', [
-            'id'            => $faceFeature->id,
-            'landmark_hash' => $faceFeature->landmark_hash,
+            'id' => $faceFeature->id,
         ]);
 
         return $faceFeature;
@@ -27,8 +25,7 @@ class FaceScanService
         $faceFeature = FaceFeature::updateOrCreate(
             ['student_id' => $data['student_id']],
             [
-                'landmark_hash' => $data['landmark_hash'],
-                'embedding'     => $data['landmarks'] ?? null,
+                'embedding' => $data['embedding'] ?? null,
             ]
         );
 
@@ -40,8 +37,56 @@ class FaceScanService
         return $faceFeature;
     }
 
-    public function findByHash(string $hash): ?FaceFeature
+    public function findByEmbedding(array $liveEmbedding): ?array
     {
-        return FaceFeature::where('landmark_hash', $hash)->first();
+        $pythonUrl = config('services.freqid_scanner.url', 'http://localhost:8001');
+        $bestGlobalDistance = 999.0;
+        $bestGlobalFaceId = null;
+
+        FaceFeature::chunk(500, function ($features) use ($liveEmbedding, $pythonUrl, &$bestGlobalDistance, &$bestGlobalFaceId) {
+            $registeredFaces = [];
+            foreach ($features as $feature) {
+                if ($feature->embedding && is_array($feature->embedding)) {
+                    $registeredFaces[] = [
+                        'face_id'   => $feature->id,
+                        'embedding' => $feature->embedding,
+                    ];
+                }
+            }
+
+            if (empty($registeredFaces)) {
+                return;
+            }
+
+            try {
+                $matchResponse = \Illuminate\Support\Facades\Http::timeout(10)->post("{$pythonUrl}/match", [
+                    'live_embedding'   => $liveEmbedding,
+                    'registered_faces' => $registeredFaces,
+                ]);
+
+                if ($matchResponse->successful()) {
+                    $matchData = $matchResponse->json();
+                    $verified = $matchData['verified'] ?? false;
+                    $distance = $matchData['distance'] ?? 999.0;
+                    $bestFaceId = $matchData['best_face_id'] ?? null;
+
+                    if ($verified && $bestFaceId && $distance < $bestGlobalDistance) {
+                        $bestGlobalDistance = $distance;
+                        $bestGlobalFaceId = $bestFaceId;
+                    }
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('[FaceScanService] Falha ao conectar ao Python (match chunk)', ['error' => $e->getMessage()]);
+            }
+        });
+
+        if ($bestGlobalFaceId) {
+            $feature = FaceFeature::with('student.schoolClass')->find($bestGlobalFaceId);
+            if ($feature) {
+                return ['feature' => $feature, 'distance' => $bestGlobalDistance];
+            }
+        }
+
+        return null;
     }
 }

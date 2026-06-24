@@ -12,12 +12,6 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
 
-/**
- *
- * Dois modos de cadastro:
- *   - enroll()           : Cam ao vivo
- *   - enrollFromPhoto()  : Por imagem
- */
 class BiometricEnrollmentService
 {
     public function __construct(
@@ -68,8 +62,7 @@ class BiometricEnrollmentService
         $faceFeature = FaceFeature::updateOrCreate(
             ['student_id' => $studentId],
             [
-                'landmark_hash' => $captureData['landmark_hash'],
-                'embedding'     => $captureData['landmarks'] ?? null,
+                'embedding' => $captureData['embedding'],
             ]
         );
 
@@ -82,16 +75,8 @@ class BiometricEnrollmentService
         return $faceFeature;
     }
 
-    /**
-     * @deprecated Utilize enrollFromPhoto() para cadastro via upload de imagem.
-     * Mantido para compatibilidade com fluxos legados.
-     *
-     * @throws CaptureException
-     * @throws AuthorizationException
-     */
     public function enroll(int $studentId, int $userId): FaceFeature
     {
         return $this->registrar->register($studentId, $userId);
     }
 }
-

@@ -19,8 +19,9 @@ class AttendanceOnlySeeder extends Seeder
             return;
         }
 
-        $now         = Carbon::now();
-        $attendances = [];
+        $now     = Carbon::now();
+        $buffer  = [];
+        $total   = 0;
 
         foreach ($students as $student) {
             $presenceRate = mt_rand(70, 95) / 100;
@@ -34,7 +35,7 @@ class AttendanceOnlySeeder extends Seeder
                     if ($day->isWeekday()) {
                         $status = ((mt_rand(0, 100) / 100) <= $presenceRate) ? 'presente' : 'ausente';
 
-                        $attendances[] = [
+                        $buffer[] = [
                             'student_id'      => $student->id,
                             'class_id'        => $student->class_id,
                             'marked_at'       => $day->copy()->setTime(7, mt_rand(30, 59))->toDateTimeString(),
@@ -43,18 +44,23 @@ class AttendanceOnlySeeder extends Seeder
                             'created_at'      => now()->toDateTimeString(),
                             'updated_at'      => now()->toDateTimeString(),
                         ];
+
+                        if (count($buffer) >= 500) {
+                            DB::table('attendances')->insert($buffer);
+                            $total += count($buffer);
+                            $buffer = [];
+                        }
                     }
                     $day->addDay();
                 }
             }
         }
 
-        $this->command->info('Inserindo ' . count($attendances) . ' registros em chunks...');
-
-        foreach (array_chunk($attendances, 500) as $chunk) {
-            DB::table('attendances')->insert($chunk);
+        if (!empty($buffer)) {
+            DB::table('attendances')->insert($buffer);
+            $total += count($buffer);
         }
 
-        $this->command->info('Concluído!');
+        $this->command->info("Concluído! {$total} registros inseridos.");
     }
 }

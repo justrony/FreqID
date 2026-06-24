@@ -29,6 +29,7 @@
                     </div>
                     <ul class="nav flex-column mt-3">
                         <li class="nav-item"><a class="nav-link" href="{{route('relatorio.inicio')}}"><i class="bi bi-house-door"></i> Início</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ route('alunos') }}"><i class="bi bi-mortarboard"></i> Alunos</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ route('turmas') }}"><i class="bi bi-people"></i> Turmas</a></li>
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('biometric.*') ? 'active' : '' }}" href="{{ route('biometric.index') }}"><i class="bi bi-person-bounding-box"></i> Biometria</a></li>
                         <li class="nav-item"><a class="nav-link {{ request()->routeIs('frequencia.*') ? 'active' : '' }}" href="{{ route('frequencia.index') }}"><i class="bi bi-camera-video"></i> Frequência</a></li>

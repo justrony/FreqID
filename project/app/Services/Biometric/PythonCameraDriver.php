@@ -11,9 +11,6 @@ class PythonCameraDriver implements CaptureDriver
         private readonly int    $timeoutSeconds = 10,
     ) {}
 
-    /**
-     * @throws CaptureException
-     */
     public function capture(int $studentId): array
     {
         $user      = auth()->user();
@@ -28,7 +25,6 @@ class PythonCameraDriver implements CaptureDriver
                     'teacher_token' => $plainText,
                 ]);
 
-            // Revoga imediatamente — token de uso único
             $tokenObj?->accessToken?->delete();
 
             if ($response->failed()) {
@@ -39,16 +35,15 @@ class PythonCameraDriver implements CaptureDriver
 
             $data = $response->json();
 
-            if (empty($data['landmark_hash'])) {
+            if (empty($data['embedding'])) {
                 throw new CaptureException('Resposta inválida do serviço de captura.');
             }
 
             return [
-                'landmark_hash' => $data['landmark_hash'],
-                'landmarks'     => $data['landmarks'] ?? [],
+                'embedding' => $data['embedding'],
             ];
         } catch (CaptureException $e) {
-            $tokenObj?->accessToken?->delete(); // garante revogação mesmo em erro
+            $tokenObj?->accessToken?->delete();
             throw $e;
         } catch (\Throwable $e) {
             $tokenObj?->accessToken?->delete();
