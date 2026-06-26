@@ -1,7 +1,3 @@
-"""
-streaming.py
-Responsabilidade: geração do MJPEG stream com anotações do MediaPipe.
-"""
 import logging
 from collections.abc import Generator
 from typing import TYPE_CHECKING
@@ -17,9 +13,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-# Constantes visuais do overlay
-_COLOR_FACE_DETECTED = (0, 200, 0)    # verde
-_COLOR_NO_FACE = (0, 140, 255)        # laranja
+_COLOR_FACE_DETECTED = (0, 200, 0)    
+_COLOR_NO_FACE = (0, 140, 255)       
 _BORDER_THICKNESS = 3
 _FONT = cv2.FONT_HERSHEY_SIMPLEX
 _FONT_SCALE_LARGE = 0.8
@@ -31,12 +26,7 @@ def generate_mjpeg(
     cap: cv2.VideoCapture,
     scanner: FreqIDScanner,
 ) -> Generator[bytes, None, None]:
-    """
-    Gerador para MJPEG stream.
-
-    Lê frames da câmera continuamente, anota com landmarks do MediaPipe
-    (se detectado) e yield cada frame como JPEG boundary.
-    """
+    
     while True:
         if cap is None or not cap.isOpened():
             logger.warning("Câmera não disponível — encerrando stream")
@@ -67,7 +57,6 @@ def generate_mjpeg(
 
 
 def _annotate_live_frame(frame: np.ndarray, scanner: FreqIDScanner) -> np.ndarray:
-    """Aplica overlay visual de detecção de rosto sobre o frame."""
     _, face_landmarks = scanner.extract_landmarks(frame)
     h, w = frame.shape[:2]
 
