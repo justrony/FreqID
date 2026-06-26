@@ -1,11 +1,4 @@
-"""
-scanner.py
-Responsabilidade: extração de landmarks faciais via MediaPipe FaceMesh.
 
-Dois scanners distintos:
-  - FreqIDScanner   : modo contínuo (stream MJPEG / registro de frequência)
-  - PhotoScanner    : modo estático (processamento de imagem enviada pelo usuário)
-"""
 import logging
 
 import cv2
@@ -30,7 +23,7 @@ class FreqIDScanner:
     def __init__(self) -> None:
         self._mp_face_mesh = mp.solutions.face_mesh
         self._face_mesh = self._mp_face_mesh.FaceMesh(
-            static_image_mode=False,         # modo vídeo — mantém tracking entre frames
+            static_image_mode=False,        
             max_num_faces=FACE_MESH_MAX_FACES,
             refine_landmarks=True,
             min_detection_confidence=FACE_MESH_MIN_DETECTION_CONFIDENCE,
@@ -53,7 +46,6 @@ class FreqIDScanner:
         return None, None
 
     def annotate_frame(self, frame: np.ndarray, face_landmarks: object) -> np.ndarray:
-        """Desenha a malha facial (landmarks + contornos) sobre o frame."""
         mp_drawing.draw_landmarks(
             image=frame,
             landmark_list=face_landmarks,
@@ -72,12 +64,6 @@ class FreqIDScanner:
 
 
 class PhotoScanner:
-    """
-    Extrai landmarks faciais de uma imagem estática (upload) usando MediaPipe FaceMesh
-    em modo estático (`static_image_mode=True`).
-
-    Separado do FreqIDScanner para não interferir no tracking contínuo do stream ao vivo.
-    """
 
     def __init__(self) -> None:
         self._mp_face_mesh = mp.solutions.face_mesh
@@ -93,10 +79,7 @@ class PhotoScanner:
         self,
         image: np.ndarray,
     ) -> np.ndarray | None:
-        """
-        Recebe um frame BGR (numpy array) decodificado a partir de um arquivo de imagem
-        e retorna o array de landmarks (478 × 3) ou None se nenhum rosto for detectado.
-        """
+        
         rgb_image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         results = self._face_mesh.process(rgb_image)
 
