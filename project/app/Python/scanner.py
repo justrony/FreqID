@@ -18,7 +18,6 @@ mp_drawing_styles = mp.solutions.drawing_styles
 
 
 class FreqIDScanner:
-    """Extrai landmarks faciais de frames OpenCV usando MediaPipe FaceMesh."""
 
     def __init__(self) -> None:
         self._mp_face_mesh = mp.solutions.face_mesh
